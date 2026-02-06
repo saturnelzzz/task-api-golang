@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "REST API untuk manajemen task (CRUD + pagination + filter status)",
+        "description": "REST API untuk manajemen task",
         "title": "Task Management API",
         "contact": {},
         "version": "1.0"

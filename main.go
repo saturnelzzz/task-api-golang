@@ -13,7 +13,7 @@ import (
 
 // @title Task Management API
 // @version 1.0
-// @description REST API untuk manajemen task (CRUD + pagination + filter status)
+// @description REST API untuk manajemen task
 // @host localhost:8080
 // @BasePath /
 func main() {

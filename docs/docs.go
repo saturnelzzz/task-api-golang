@@ -348,7 +348,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Task Management API",
-	Description:      "REST API untuk manajemen task (CRUD + pagination + filter status)",
+	Description:      "REST API untuk manajemen task",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

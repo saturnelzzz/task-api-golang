@@ -41,7 +41,7 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: REST API untuk manajemen task (CRUD + pagination + filter status)
+  description: REST API untuk manajemen task
   title: Task Management API
   version: "1.0"
 paths:

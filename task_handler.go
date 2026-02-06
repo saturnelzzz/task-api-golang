@@ -8,6 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type ListTasksResponse struct {
+	Data  []Task `json:"data"`
+	Page  int    `json:"page"`
+	Limit int    `json:"limit"`
+	Total int64  `json:"total"`
+}
+
 type CreateTaskRequest struct {
 	Title  string `json:"title"`
 	Status string `json:"status"`
@@ -18,7 +25,7 @@ type UpdateTaskRequest struct {
 	Status string `json:"status"`
 }
 
-// Helper validasi field tidak kosong
+// validateNonEmpty: validasi sederhana agar field tidak kosong
 func validateNonEmpty(title, status string) (bool, string) {
 	title = strings.TrimSpace(title)
 	status = strings.TrimSpace(status)
@@ -32,7 +39,17 @@ func validateNonEmpty(title, status string) (bool, string) {
 	return true, ""
 }
 
-// POST /tasks
+// CreateTask godoc
+// @Summary Create task
+// @Description Membuat task baru
+// @Tags Tasks
+// @Accept json
+// @Produce json
+// @Param body body CreateTaskRequest true "Task payload"
+// @Success 201 {object} Task
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks [post]
 func CreateTask(c *gin.Context) {
 	var req CreateTaskRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -55,13 +72,25 @@ func CreateTask(c *gin.Context) {
 	c.JSON(http.StatusCreated, task)
 }
 
-// GET /tasks?status=todo&page=1&limit=10
+// ListTasks godoc
+// @Summary List tasks
+// @Description Ambil list task dengan pagination dan filter status
+// @Tags Tasks
+// @Accept json
+// @Produce json
+// @Param status query string false "Filter by status (contoh: todo|done)"
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Page size" default(10)
+// @Success 200 {object} ListTasksResponse
+// @Failure 500 {object} map[string]string
+// @Router /tasks [get]
 func ListTasks(c *gin.Context) {
 	status := strings.TrimSpace(c.Query("status"))
 
 	// default pagination
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
 	if page < 1 {
 		page = 1
 	}
@@ -69,8 +98,9 @@ func ListTasks(c *gin.Context) {
 		limit = 10
 	}
 	if limit > 100 {
-		limit = 100 // biar gak kebablasan
+		limit = 100 // prevent abuse
 	}
+
 	offset := (page - 1) * limit
 
 	var tasks []Task
@@ -94,15 +124,24 @@ func ListTasks(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data":  tasks,
-		"page":  page,
-		"limit": limit,
-		"total": total,
+	c.JSON(http.StatusOK, ListTasksResponse{
+		Data:  tasks,
+		Page:  page,
+		Limit: limit,
+		Total: total,
 	})
 }
 
-// GET /tasks/:id
+// GetTaskByID godoc
+// @Summary Get task by ID
+// @Description Ambil detail task berdasarkan ID
+// @Tags Tasks
+// @Accept json
+// @Produce json
+// @Param id path int true "Task ID"
+// @Success 200 {object} Task
+// @Failure 404 {object} map[string]string
+// @Router /tasks/{id} [get]
 func GetTaskByID(c *gin.Context) {
 	id := c.Param("id")
 	var task Task
@@ -115,7 +154,19 @@ func GetTaskByID(c *gin.Context) {
 	c.JSON(http.StatusOK, task)
 }
 
-// PUT /tasks/:id
+// UpdateTask godoc
+// @Summary Update task
+// @Description Update task berdasarkan ID
+// @Tags Tasks
+// @Accept json
+// @Produce json
+// @Param id path int true "Task ID"
+// @Param body body UpdateTaskRequest true "Task payload"
+// @Success 200 {object} Task
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks/{id} [put]
 func UpdateTask(c *gin.Context) {
 	id := c.Param("id")
 	var task Task
@@ -148,7 +199,17 @@ func UpdateTask(c *gin.Context) {
 	c.JSON(http.StatusOK, task)
 }
 
-// DELETE /tasks/:id
+// DeleteTask godoc
+// @Summary Delete task
+// @Description Hapus task berdasarkan ID
+// @Tags Tasks
+// @Accept json
+// @Produce json
+// @Param id path int true "Task ID"
+// @Success 200 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks/{id} [delete]
 func DeleteTask(c *gin.Context) {
 	id := c.Param("id")
 

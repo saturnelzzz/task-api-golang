@@ -4,24 +4,42 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "task-api/docs" 
 )
 
+// @title Task Management API
+// @version 1.0
+// @description REST API untuk manajemen task (CRUD + pagination + filter status)
+// @host localhost:8080
+// @BasePath /
 func main() {
+	// init database
 	InitDB()
 
-	// auto create/update table sesuai struct Task
+	// auto migrate table
 	if err := DB.AutoMigrate(&Task{}); err != nil {
 		log.Fatal("Gagal migrate: ", err)
 	}
 
+	// init gin
 	r := gin.Default()
 
+	// task routes
 	r.POST("/tasks", CreateTask)
 	r.GET("/tasks", ListTasks)
 	r.GET("/tasks/:id", GetTaskByID)
 	r.PUT("/tasks/:id", UpdateTask)
 	r.DELETE("/tasks/:id", DeleteTask)
 
+	// swagger route
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	log.Println("Server running di http://localhost:8080")
-	r.Run(":8080")
+	if err := r.Run(":8080"); err != nil {
+		log.Fatal("Gagal menjalankan server: ", err)
+	}
 }

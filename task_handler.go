@@ -86,8 +86,6 @@ func CreateTask(c *gin.Context) {
 // @Router /tasks [get]
 func ListTasks(c *gin.Context) {
 	status := strings.TrimSpace(c.Query("status"))
-
-	// default pagination
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
@@ -98,7 +96,7 @@ func ListTasks(c *gin.Context) {
 		limit = 10
 	}
 	if limit > 100 {
-		limit = 100 // prevent abuse
+		limit = 100
 	}
 
 	offset := (page - 1) * limit
@@ -106,7 +104,6 @@ func ListTasks(c *gin.Context) {
 	var tasks []Task
 	query := DB.Model(&Task{})
 
-	// filter by status (opsional)
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}

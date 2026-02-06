@@ -17,25 +17,19 @@ import (
 // @host localhost:8080
 // @BasePath /
 func main() {
-	// init database
 	InitDB()
-
-	// auto migrate table
 	if err := DB.AutoMigrate(&Task{}); err != nil {
 		log.Fatal("Gagal migrate: ", err)
 	}
 
-	// init gin
 	r := gin.Default()
 
-	// task routes
 	r.POST("/tasks", CreateTask)
 	r.GET("/tasks", ListTasks)
 	r.GET("/tasks/:id", GetTaskByID)
 	r.PUT("/tasks/:id", UpdateTask)
 	r.DELETE("/tasks/:id", DeleteTask)
 
-	// swagger route
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	log.Println("Server running di http://localhost:8080")

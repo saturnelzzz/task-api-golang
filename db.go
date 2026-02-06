@@ -10,8 +10,6 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
-	// Laragon default:
-	// user: root, password: (kosong), host: 127.0.0.1, port: 3306
 	dsn := "root:@tcp(127.0.0.1:3306)/taskdb?charset=utf8mb4&parseTime=True&loc=Local"
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})

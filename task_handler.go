@@ -25,18 +25,42 @@ type UpdateTaskRequest struct {
 	Status string `json:"status"`
 }
 
-// validateNonEmpty: validasi sederhana agar field tidak kosong
-func validateNonEmpty(title, status string) (bool, string) {
+type ValidationErrorResponse struct {
+	Message string              `json:"message"`
+	Errors  map[string][]string `json:"errors"`
+}
+
+var allowedStatuses = map[string]bool{
+	"pending":     true,
+	"in_progress": true,
+	"done":        true,
+}
+
+func buildValidationErrors(title, status string) map[string][]string {
+	errors := map[string][]string{}
 	title = strings.TrimSpace(title)
 	status = strings.TrimSpace(status)
 
 	if title == "" {
-		return false, "title tidak boleh kosong"
+		errors["title"] = []string{"title tidak boleh kosong"}
 	}
 	if status == "" {
-		return false, "status tidak boleh kosong"
+		errors["status"] = []string{"status tidak boleh kosong"}
+	} else if !allowedStatuses[status] {
+		errors["status"] = []string{"status harus pending, in_progress, atau done"}
 	}
-	return true, ""
+
+	if len(errors) == 0 {
+		return nil
+	}
+	return errors
+}
+
+func writeValidationError(c *gin.Context, errors map[string][]string) {
+	c.JSON(http.StatusUnprocessableEntity, ValidationErrorResponse{
+		Message: "The given data was invalid.",
+		Errors:  errors,
+	})
 }
 
 // CreateTask godoc
@@ -57,9 +81,8 @@ func CreateTask(c *gin.Context) {
 		return
 	}
 
-	ok, msg := validateNonEmpty(req.Title, req.Status)
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+	if errors := buildValidationErrors(req.Title, req.Status); errors != nil {
+		writeValidationError(c, errors)
 		return
 	}
 
@@ -89,6 +112,13 @@ func ListTasks(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
+	if status != "" && !allowedStatuses[status] {
+		writeValidationError(c, map[string][]string{
+			"status": {"status harus pending, in_progress, atau done"},
+		})
+		return
+	}
+
 	if page < 1 {
 		page = 1
 	}
@@ -108,14 +138,12 @@ func ListTasks(c *gin.Context) {
 		query = query.Where("status = ?", status)
 	}
 
-	// total untuk metadata pagination
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung data"})
 		return
 	}
 
-	// ambil data
 	if err := query.Order("id DESC").Limit(limit).Offset(offset).Find(&tasks).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data"})
 		return
@@ -179,9 +207,8 @@ func UpdateTask(c *gin.Context) {
 		return
 	}
 
-	ok, msg := validateNonEmpty(req.Title, req.Status)
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+	if errors := buildValidationErrors(req.Title, req.Status); errors != nil {
+		writeValidationError(c, errors)
 		return
 	}
 
@@ -210,7 +237,6 @@ func UpdateTask(c *gin.Context) {
 func DeleteTask(c *gin.Context) {
 	id := c.Param("id")
 
-	// cek ada/tidak
 	var task Task
 	if err := DB.First(&task, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "task tidak ditemukan"})
